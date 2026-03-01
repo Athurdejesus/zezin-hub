@@ -1,0 +1,1303 @@
+--[[
+    Script: ZEZIN HUB
+    By: Zezin
+--]]
+
+-- ==================== TELA DE CARREGAMENTO SIMPLES ====================
+local player = game.Players.LocalPlayer
+
+-- Criar GUI de carregamento
+local loadingGui = Instance.new("ScreenGui")
+loadingGui.Name = "LoadingScreen"
+loadingGui.Parent = player.PlayerGui
+loadingGui.ResetOnSpawn = false
+loadingGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+loadingGui.IgnoreGuiInset = true
+loadingGui.DisplayOrder = 9999
+
+-- Fundo escuro
+local background = Instance.new("Frame")
+background.Parent = loadingGui
+background.Size = UDim2.new(1, 0, 1, 0)
+background.BackgroundColor3 = Color3.new(0, 0, 0)
+background.BackgroundTransparency = 0.3
+background.BorderSizePixel = 0
+background.ZIndex = 9999
+
+-- Frame principal do loading
+local loadingFrame = Instance.new("Frame")
+loadingFrame.Parent = loadingGui
+loadingFrame.Size = UDim2.new(0, 300, 0, 120)
+loadingFrame.Position = UDim2.new(0.5, -150, 0.5, -60)
+loadingFrame.BackgroundColor3 = Color3.new(0.1, 0, 0.2)
+loadingFrame.BackgroundTransparency = 0.1
+loadingFrame.BorderSizePixel = 2
+loadingFrame.BorderColor3 = Color3.new(0.5, 0, 1)
+loadingFrame.ZIndex = 10000
+
+local loadingCorner = Instance.new("UICorner")
+loadingCorner.Parent = loadingFrame
+loadingCorner.CornerRadius = UDim.new(0, 8)
+
+-- Título
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Parent = loadingFrame
+titleLabel.Size = UDim2.new(1, -20, 0.4, 0)
+titleLabel.Position = UDim2.new(0, 10, 0, 5)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "ZEZIN HUB"
+titleLabel.TextColor3 = Color3.new(0.8, 0.4, 1)
+titleLabel.TextScaled = true
+titleLabel.Font = Enum.Font.GothamBlack
+titleLabel.TextStrokeColor3 = Color3.new(0.4, 0, 0.8)
+titleLabel.ZIndex = 10001
+
+-- Barra de progresso
+local barFrame = Instance.new("Frame")
+barFrame.Parent = loadingFrame
+barFrame.Size = UDim2.new(1, -40, 0.2, 0)
+barFrame.Position = UDim2.new(0, 20, 0.5, -10)
+barFrame.BackgroundColor3 = Color3.new(0.3, 0.1, 0.4)
+barFrame.BorderSizePixel = 1
+barFrame.BorderColor3 = Color3.new(0.6, 0, 1)
+barFrame.ZIndex = 10001
+
+local barCorner = Instance.new("UICorner")
+barCorner.Parent = barFrame
+barCorner.CornerRadius = UDim.new(0, 4)
+
+local progressBar = Instance.new("Frame")
+progressBar.Parent = barFrame
+progressBar.Size = UDim2.new(0, 0, 1, 0)
+progressBar.BackgroundColor3 = Color3.new(0.8, 0.2, 1)
+progressBar.BorderSizePixel = 0
+progressBar.ZIndex = 10002
+
+local progressCorner = Instance.new("UICorner")
+progressCorner.Parent = progressBar
+progressCorner.CornerRadius = UDim.new(0, 4)
+
+-- Porcentagem
+local percentLabel = Instance.new("TextLabel")
+percentLabel.Parent = loadingFrame
+percentLabel.Size = UDim2.new(1, -20, 0.3, 0)
+percentLabel.Position = UDim2.new(0, 10, 0.7, 0)
+percentLabel.BackgroundTransparency = 1
+percentLabel.Text = "0%"
+percentLabel.TextColor3 = Color3.new(1, 1, 1)
+percentLabel.TextScaled = true
+percentLabel.Font = Enum.Font.GothamBold
+percentLabel.ZIndex = 10001
+
+-- ==================== CARREGAMENTO RÁPIDO ====================
+local carregamentoCompleto = false
+
+-- Barra de progresso rápida
+spawn(function()
+    for i = 0, 100, 5 do
+        progressBar.Size = UDim2.new(i/100, 0, 1, 0)
+        percentLabel.Text = i .. "%"
+        task.wait(0.02)
+    end
+    
+    progressBar.Size = UDim2.new(1, 0, 1, 0)
+    percentLabel.Text = "100%"
+    titleLabel.Text = "ZEZIN HUB 💜"
+    
+    task.wait(0.3)
+    
+    carregamentoCompleto = true
+    loadingGui:Destroy()
+end)
+
+-- Aguarda carregamento
+repeat task.wait() until carregamentoCompleto
+
+-- ==================== INTERFACE PRINCIPAL ====================
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local Window = Library.CreateLib("ZEZIN HUB", "DarkTheme")
+
+-- Variáveis
+local players = game:GetService("Players")
+local runService = game:GetService("RunService")
+local userInputService = game:GetService("UserInputService")
+local camera = workspace.CurrentCamera
+local tweenService = game:GetService("TweenService")
+local virtualUser = game:GetService("VirtualUser")
+local workspace = game:GetService("Workspace")
+
+-- Controles
+local speedEnabled = false
+local speedValue = 50
+local infiniteJumpEnabled = false
+local antiRagdollEnabled = false
+local desyncEnabled = false
+local espEnabled = false
+local espLinhaEnabled = false
+local spectatingEnabled = false
+local currentSpectating = nil
+local espColor = Color3.new(1, 0, 0)
+
+-- ==================== FUNÇÃO PARA TORNAR TUDO ROXO ====================
+local function tornarTudoRoxo()
+    local roxoEscuro = Color3.new(0.3, 0, 0.5)
+    local roxoClaro = Color3.new(0.8, 0.4, 1)
+    local roxoVibrante = Color3.new(0.6, 0, 1)
+    
+    task.wait(0.5)
+    
+    for _, gui in ipairs(player.PlayerGui:GetChildren()) do
+        if gui:IsA("ScreenGui") and gui.Name:find("Kavo") then
+            local function mudarCores(obj)
+                if obj:IsA("Frame") then
+                    if obj.BackgroundColor3 == Color3.new(0, 0, 0) or obj.BackgroundColor3 == Color3.new(0.1, 0.1, 0.1) then
+                        obj.BackgroundColor3 = roxoEscuro
+                    end
+                end
+                
+                if obj:IsA("TextLabel") or obj:IsA("TextButton") then
+                    if obj.TextColor3 == Color3.new(1, 1, 1) then
+                        obj.TextColor3 = roxoClaro
+                    end
+                end
+                
+                if obj:IsA("UIStroke") then
+                    obj.Color = roxoVibrante
+                end
+                
+                if obj:IsA("ScrollingFrame") then
+                    obj.ScrollBarImageColor3 = roxoVibrante
+                end
+                
+                for _, child in ipairs(obj:GetChildren()) do
+                    mudarCores(child)
+                end
+            end
+            mudarCores(gui)
+            break
+        end
+    end
+end
+
+spawn(tornarTudoRoxo)
+
+-- ==================== ESP ====================
+local espObjects = {}
+
+local function criarESP(jogador)
+    if jogador == player then return end
+    
+    local function onCharacter(character)
+        local head = character:WaitForChild("Head", 5)
+        local humanoid = character:WaitForChild("Humanoid", 5)
+        
+        if not head or not humanoid then return end
+        
+        local billboard = Instance.new("BillboardGui")
+        billboard.Name = "ESP_" .. jogador.Name
+        billboard.Adornee = head
+        billboard.Size = UDim2.new(0, 150, 0, 50)
+        billboard.StudsOffset = Vector3.new(0, 3, 0)
+        billboard.AlwaysOnTop = true
+        billboard.Parent = character
+        
+        local nomeLabel = Instance.new("TextLabel")
+        nomeLabel.Parent = billboard
+        nomeLabel.BackgroundTransparency = 1
+        nomeLabel.Size = UDim2.new(1, 0, 0.5, 0)
+        nomeLabel.Text = jogador.Name
+        nomeLabel.TextColor3 = espColor
+        nomeLabel.TextScaled = true
+        nomeLabel.Font = Enum.Font.GothamBold
+        
+        local vidaLabel = Instance.new("TextLabel")
+        vidaLabel.Parent = billboard
+        vidaLabel.BackgroundTransparency = 1
+        vidaLabel.Size = UDim2.new(1, 0, 0.5, 0)
+        vidaLabel.Position = UDim2.new(0, 0, 0.5, 0)
+        vidaLabel.Text = "❤️ " .. math.floor(humanoid.Health)
+        vidaLabel.TextColor3 = Color3.new(0, 1, 0)
+        vidaLabel.TextScaled = true
+        vidaLabel.Font = Enum.Font.GothamBold
+        
+        local highlight = Instance.new("Highlight")
+        highlight.Name = "HL_" .. jogador.Name
+        highlight.Adornee = character
+        highlight.FillColor = espColor
+        highlight.FillTransparency = 0.5
+        highlight.OutlineColor = Color3.new(1, 1, 1)
+        highlight.Parent = character
+        
+        table.insert(espObjects, {
+            billboard = billboard,
+            highlight = highlight,
+            jogador = jogador
+        })
+    end
+    
+    if jogador.Character then
+        onCharacter(jogador.Character)
+    end
+    
+    jogador.CharacterAdded:Connect(onCharacter)
+end
+
+-- ==================== ESP LINHA ====================
+local linhasESP = {}
+
+local function criarLinhaESP(jogador)
+    if jogador == player then return end
+    
+    local linha = Drawing.new("Line")
+    linha.Visible = false
+    linha.Color = espColor
+    linha.Thickness = 1
+    linha.Transparency = 0.5
+    
+    table.insert(linhasESP, {
+        linha = linha,
+        jogador = jogador
+    })
+end
+
+local function atualizarLinhasESP()
+    if not espLinhaEnabled then
+        for _, l in ipairs(linhasESP) do
+            if l.linha then
+                l.linha.Visible = false
+            end
+        end
+        return
+    end
+    
+    local telaCentro = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y)
+    
+    for _, l in ipairs(linhasESP) do
+        local jogador = l.jogador
+        local linha = l.linha
+        
+        if jogador and jogador.Character and jogador.Character:FindFirstChild("HumanoidRootPart") and jogador.Character:FindFirstChildOfClass("Humanoid") and jogador.Character.Humanoid.Health > 0 then
+            local root = jogador.Character.HumanoidRootPart
+            local posJogador, naTela = camera:WorldToViewportPoint(root.Position)
+            
+            if naTela then
+                linha.Visible = true
+                linha.From = Vector2.new(telaCentro.X, telaCentro.Y)
+                linha.To = Vector2.new(posJogador.X, posJogador.Y)
+                linha.Color = espColor
+            else
+                linha.Visible = false
+            end
+        else
+            linha.Visible = false
+        end
+    end
+end
+
+runService.Heartbeat:Connect(atualizarLinhasESP)
+
+-- ==================== FUNÇÕES ====================
+local function getPlayerList()
+    local list = {}
+    for _, v in ipairs(players:GetPlayers()) do
+        if v ~= player then
+            table.insert(list, v.Name)
+        end
+    end
+    return list
+end
+
+local function getPlayer(name)
+    for _, v in ipairs(players:GetPlayers()) do
+        if v.Name == name then
+            return v
+        end
+    end
+    return nil
+end
+
+-- ==================== ABAS ====================
+local mainTab = Window:NewTab("⚡ PRINCIPAL")
+local mainSection = mainTab:NewSection("Controles")
+
+mainSection:NewLabel("━━━━━━━━━━━━━━━━━━━━━━")
+mainSection:NewLabel("💜 ZEZIN HUB 💜")
+mainSection:NewLabel("━━━━━━━━━━━━━━━━━━━━━━")
+
+-- SPEED
+mainSection:NewToggle("Speed", "Aumentar velocidade", function(state)
+    speedEnabled = state
+    if player.Character then
+        local hum = player.Character:FindFirstChildOfClass("Humanoid")
+        if hum then
+            hum.WalkSpeed = state and speedValue or 16
+        end
+    end
+end)
+
+mainSection:NewSlider("Velocidade", "Regule a velocidade", 200, 50, function(value)
+    speedValue = value
+    if speedEnabled and player.Character then
+        local hum = player.Character:FindFirstChildOfClass("Humanoid")
+        if hum then
+            hum.WalkSpeed = value
+        end
+    end
+end)
+
+-- INFINITY JUMP
+mainSection:NewToggle("Pulo Infinito", "Pular no ar", function(state)
+    infiniteJumpEnabled = state
+end)
+
+-- ANTI RAGDOLL
+mainSection:NewToggle("Anti Ragdoll", "Nunca cair", function(state)
+    antiRagdollEnabled = state
+end)
+
+-- DESYNC (NOCLIP)
+mainSection:NewToggle("Desync (Noclip)", "Atravessar paredes", function(state)
+    desyncEnabled = state
+end)
+
+-- ==================== ESP TAB ====================
+local espTab = Window:NewTab("👁️ ESP")
+local espMainSection = espTab:NewSection("Configurações ESP")
+local espColorSection = espTab:NewSection("Cor do ESP")
+
+-- ESP NOME
+espMainSection:NewToggle("Ativar ESP (Nome/Vida)", "Ver caixas com nome e vida", function(state)
+    espEnabled = state
+    if state then
+        for _, v in ipairs(players:GetPlayers()) do
+            criarESP(v)
+        end
+        players.PlayerAdded:Connect(function(v)
+            if espEnabled then
+                criarESP(v)
+            end
+        end)
+        Library:Notify("💜 ESP NOME ATIVADO")
+    else
+        for _, obj in ipairs(espObjects) do
+            pcall(function() obj.billboard:Destroy() end)
+            pcall(function() obj.highlight:Destroy() end)
+        end
+        espObjects = {}
+        Library:Notify("❌ ESP NOME DESATIVADO")
+    end
+end)
+
+-- ESP LINHA
+espMainSection:NewToggle("Ativar ESP LINHA", "Desenha linhas da tela até os jogadores", function(state)
+    espLinhaEnabled = state
+    
+    if state then
+        for _, v in ipairs(linhasESP) do
+            if v.linha then
+                v.linha:Remove()
+            end
+        end
+        linhasESP = {}
+        
+        for _, v in ipairs(players:GetPlayers()) do
+            criarLinhaESP(v)
+        end
+        
+        players.PlayerAdded:Connect(function(v)
+            if espLinhaEnabled then
+                criarLinhaESP(v)
+            end
+        end)
+        
+        players.PlayerRemoving:Connect(function(v)
+            for i, l in ipairs(linhasESP) do
+                if l.jogador == v then
+                    if l.linha then
+                        l.linha:Remove()
+                    end
+                    table.remove(linhasESP, i)
+                    break
+                end
+            end
+        end)
+        
+        Library:Notify("💜 ESP LINHA ATIVADO")
+    else
+        for _, l in ipairs(linhasESP) do
+            if l.linha then
+                l.linha.Visible = false
+                l.linha:Remove()
+            end
+        end
+        linhasESP = {}
+        Library:Notify("❌ ESP LINHA DESATIVADO")
+    end
+end)
+
+-- COR DO ESP
+espColorSection:NewColorPicker("Cor do ESP", "Escolha a cor", Color3.new(1, 0, 0), function(color)
+    espColor = color
+    
+    for _, obj in ipairs(espObjects) do
+        if obj.billboard then
+            local nome = obj.billboard:FindFirstChildOfClass("TextLabel")
+            if nome then
+                nome.TextColor3 = color
+            end
+        end
+        if obj.highlight then
+            obj.highlight.FillColor = color
+        end
+    end
+    
+    for _, l in ipairs(linhasESP) do
+        if l.linha then
+            l.linha.Color = color
+        end
+    end
+end)
+
+-- ==================== TELEPORTE TAB ====================
+local tpTab = Window:NewTab("📌 TELEPORTE")
+local tpSection = tpTab:NewSection("Teleportar para Jogadores")
+
+tpSection:NewDropdown("Jogadores", "Escolha um jogador", getPlayerList(), function(selected)
+    local target = getPlayer(selected)
+    if target and target.Character and player.Character then
+        local tRoot = target.Character:FindFirstChild("HumanoidRootPart")
+        local pRoot = player.Character:FindFirstChild("HumanoidRootPart")
+        if tRoot and pRoot then
+            pRoot.CFrame = tRoot.CFrame * CFrame.new(0, 5, 0)
+        end
+    end
+end)
+
+tpSection:NewButton("Atualizar Lista", "Recarregar", function()
+    tpSection:UpdateDropdown("Jogadores", getPlayerList())
+end)
+
+-- ==================== SPECTATOR TAB ====================
+local spectateTab = Window:NewTab("👁️ SPECTATOR")
+local spectateSection = spectateTab:NewSection("Modo Espectador")
+
+local function startSpectating(target)
+    if target and target.Character then
+        spectatingEnabled = true
+        currentSpectating = target
+        camera.CameraSubject = target.Character.Humanoid
+    end
+end
+
+local function stopSpectating()
+    spectatingEnabled = false
+    currentSpectating = nil
+    camera.CameraSubject = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+end
+
+spectateSection:NewDropdown("Jogadores", "Quem espiar", getPlayerList(), function(selected)
+    startSpectating(getPlayer(selected))
+end)
+
+spectateSection:NewButton("Parar de Espiar", "Voltar", function()
+    stopSpectating()
+end)
+
+spectateSection:NewButton("Atualizar Lista", "Recarregar", function()
+    spectateSection:UpdateDropdown("Jogadores", getPlayerList())
+end)
+
+-- ==================== SISTEMAS ====================
+
+-- ANTI RAGDOLL CORRIGIDO
+local function checkAntiRagdoll()
+    if not antiRagdollEnabled or not player.Character then return end
+    
+    local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return end
+    
+    local ragdollStates = {
+        [Enum.HumanoidStateType.FallingDown] = true,
+        [Enum.HumanoidStateType.Ragdoll] = true,
+        [Enum.HumanoidStateType.Physics] = true,
+        [Enum.HumanoidStateType.Dead] = true,
+        [Enum.HumanoidStateType.Freefall] = true
+    }
+    
+    if ragdollStates[humanoid:GetState()] then
+        humanoid:ChangeState(Enum.HumanoidStateType.Running)
+        
+        if player.Character:FindFirstChild("RagdollConstraint") then
+            player.Character.RagdollConstraint:Destroy()
+        end
+        
+        local rootPart = player.Character:FindFirstChild("HumanoidRootPart")
+        if rootPart then
+            rootPart.Velocity = Vector3.new(0, 10, 0)
+        end
+    end
+end
+
+runService.Heartbeat:Connect(function()
+    if antiRagdollEnabled then
+        checkAntiRagdoll()
+    end
+end)
+
+-- DESYNC (NOCLIP)
+runService.Stepped:Connect(function()
+    if desyncEnabled and player.Character then
+        for _, v in ipairs(player.Character:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.CanCollide = false
+            end
+        end
+    end
+end)
+
+-- INFINITY JUMP
+userInputService.JumpRequest:Connect(function()
+    if infiniteJumpEnabled and player.Character then
+        local hum = player.Character:FindFirstChildOfClass("Humanoid")
+        local root = player.Character:FindFirstChild("HumanoidRootPart")
+        if hum and root and hum.FloorMaterial == Enum.Material.Air then
+            root.Velocity = Vector3.new(root.Velocity.X, 50, root.Velocity.Z)
+        end
+    end
+end)
+
+-- ==================== BOTÃO DE MINIMIZAR ====================
+task.wait(1)
+
+local kavoFrame = nil
+for _, gui in ipairs(player.PlayerGui:GetChildren()) do
+    if gui:IsA("ScreenGui") and gui.Name:find("Kavo") then
+        for _, frame in ipairs(gui:GetChildren()) do
+            if frame:IsA("Frame") and frame.Name == "Main" then
+                kavoFrame = frame
+                break
+            end
+        end
+        break
+    end
+end
+
+if kavoFrame then
+    local posOriginal = kavoFrame.Position
+    local sizeOriginal = kavoFrame.Size
+    local minimizado = false
+    
+    local minimizeBtn = Instance.new("TextButton")
+    minimizeBtn.Parent = kavoFrame
+    minimizeBtn.Size = UDim2.new(0, 30, 0, 30)
+    minimizeBtn.Position = UDim2.new(1, -35, 0, 5)
+    minimizeBtn.Text = "−"
+    minimizeBtn.TextColor3 = Color3.new(1, 1, 1)
+    minimizeBtn.TextScaled = true
+    minimizeBtn.Font = Enum.Font.GothamBold
+    minimizeBtn.BackgroundColor3 = Color3.new(0.3, 0, 0.5)
+    minimizeBtn.BackgroundTransparency = 0.3
+    minimizeBtn.BorderSizePixel = 0
+    minimizeBtn.ZIndex = 1000
+    
+    local btnStroke = Instance.new("UIStroke")
+    btnStroke.Parent = minimizeBtn
+    btnStroke.Color = Color3.new(0.6, 0, 1)
+    btnStroke.Thickness = 1
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.Parent = minimizeBtn
+    btnCorner.CornerRadius = UDim.new(0, 6)
+    
+    minimizeBtn.MouseButton1Click:Connect(function()
+        minimizado = not minimizado
+        
+        if minimizado then
+            minimizeBtn.Text = "□"
+            
+            for _, child in ipairs(kavoFrame:GetChildren()) do
+                if child:IsA("Frame") or child:IsA("ScrollingFrame") then
+                    if child ~= minimizeBtn then
+                        child.Visible = false
+                    end
+                end
+            end
+            
+            local tween = tweenService:Create(kavoFrame, 
+                TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), 
+                {Position = UDim2.new(1, -45, 0, 5), Size = UDim2.new(0, 40, 0, 40)}
+            )
+            tween:Play()
+        else
+            minimizeBtn.Text = "−"
+            
+            for _, child in ipairs(kavoFrame:GetChildren()) do
+                if child:IsA("Frame") or child:IsA("ScrollingFrame") then
+                    child.Visible = true
+                end
+            end
+            
+            local tween = tweenService:Create(kavoFrame, 
+                TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), 
+                {Position = posOriginal, Size = sizeOriginal}
+            )
+            tween:Play()
+        end
+    end)
+end
+
+-- ==================== NOTIFICAÇÃO FINAL ====================
+Library:Notify("💜 ZEZIN HUB CARREGADO!")
+Library:Notify("✅ SPEED | INFINITY JUMP | ANTI RAGDOLL")
+Library:Notify("✅ DESYNC | ESP | ESP LINHA | TP | SPECTATOR")--[[
+    Script: ZEZIN HUB
+    By: Zezin
+--]]
+
+-- ==================== TELA DE CARREGAMENTO SIMPLES ====================
+local player = game.Players.LocalPlayer
+
+-- Criar GUI de carregamento
+local loadingGui = Instance.new("ScreenGui")
+loadingGui.Name = "LoadingScreen"
+loadingGui.Parent = player.PlayerGui
+loadingGui.ResetOnSpawn = false
+loadingGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+loadingGui.IgnoreGuiInset = true
+loadingGui.DisplayOrder = 9999
+
+-- Fundo escuro
+local background = Instance.new("Frame")
+background.Parent = loadingGui
+background.Size = UDim2.new(1, 0, 1, 0)
+background.BackgroundColor3 = Color3.new(0, 0, 0)
+background.BackgroundTransparency = 0.3
+background.BorderSizePixel = 0
+background.ZIndex = 9999
+
+-- Frame principal do loading
+local loadingFrame = Instance.new("Frame")
+loadingFrame.Parent = loadingGui
+loadingFrame.Size = UDim2.new(0, 300, 0, 120)
+loadingFrame.Position = UDim2.new(0.5, -150, 0.5, -60)
+loadingFrame.BackgroundColor3 = Color3.new(0.1, 0, 0.2)
+loadingFrame.BackgroundTransparency = 0.1
+loadingFrame.BorderSizePixel = 2
+loadingFrame.BorderColor3 = Color3.new(0.5, 0, 1)
+loadingFrame.ZIndex = 10000
+
+local loadingCorner = Instance.new("UICorner")
+loadingCorner.Parent = loadingFrame
+loadingCorner.CornerRadius = UDim.new(0, 8)
+
+-- Título
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Parent = loadingFrame
+titleLabel.Size = UDim2.new(1, -20, 0.4, 0)
+titleLabel.Position = UDim2.new(0, 10, 0, 5)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "ZEZIN HUB"
+titleLabel.TextColor3 = Color3.new(0.8, 0.4, 1)
+titleLabel.TextScaled = true
+titleLabel.Font = Enum.Font.GothamBlack
+titleLabel.TextStrokeColor3 = Color3.new(0.4, 0, 0.8)
+titleLabel.ZIndex = 10001
+
+-- Barra de progresso
+local barFrame = Instance.new("Frame")
+barFrame.Parent = loadingFrame
+barFrame.Size = UDim2.new(1, -40, 0.2, 0)
+barFrame.Position = UDim2.new(0, 20, 0.5, -10)
+barFrame.BackgroundColor3 = Color3.new(0.3, 0.1, 0.4)
+barFrame.BorderSizePixel = 1
+barFrame.BorderColor3 = Color3.new(0.6, 0, 1)
+barFrame.ZIndex = 10001
+
+local barCorner = Instance.new("UICorner")
+barCorner.Parent = barFrame
+barCorner.CornerRadius = UDim.new(0, 4)
+
+local progressBar = Instance.new("Frame")
+progressBar.Parent = barFrame
+progressBar.Size = UDim2.new(0, 0, 1, 0)
+progressBar.BackgroundColor3 = Color3.new(0.8, 0.2, 1)
+progressBar.BorderSizePixel = 0
+progressBar.ZIndex = 10002
+
+local progressCorner = Instance.new("UICorner")
+progressCorner.Parent = progressBar
+progressCorner.CornerRadius = UDim.new(0, 4)
+
+-- Porcentagem
+local percentLabel = Instance.new("TextLabel")
+percentLabel.Parent = loadingFrame
+percentLabel.Size = UDim2.new(1, -20, 0.3, 0)
+percentLabel.Position = UDim2.new(0, 10, 0.7, 0)
+percentLabel.BackgroundTransparency = 1
+percentLabel.Text = "0%"
+percentLabel.TextColor3 = Color3.new(1, 1, 1)
+percentLabel.TextScaled = true
+percentLabel.Font = Enum.Font.GothamBold
+percentLabel.ZIndex = 10001
+
+-- ==================== CARREGAMENTO RÁPIDO ====================
+local carregamentoCompleto = false
+
+-- Barra de progresso rápida
+spawn(function()
+    for i = 0, 100, 5 do
+        progressBar.Size = UDim2.new(i/100, 0, 1, 0)
+        percentLabel.Text = i .. "%"
+        task.wait(0.02)
+    end
+    
+    progressBar.Size = UDim2.new(1, 0, 1, 0)
+    percentLabel.Text = "100%"
+    titleLabel.Text = "ZEZIN HUB 💜"
+    
+    task.wait(0.3)
+    
+    carregamentoCompleto = true
+    loadingGui:Destroy()
+end)
+
+-- Aguarda carregamento
+repeat task.wait() until carregamentoCompleto
+
+-- ==================== INTERFACE PRINCIPAL ====================
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local Window = Library.CreateLib("ZEZIN HUB", "DarkTheme")
+
+-- Variáveis
+local players = game:GetService("Players")
+local runService = game:GetService("RunService")
+local userInputService = game:GetService("UserInputService")
+local camera = workspace.CurrentCamera
+local tweenService = game:GetService("TweenService")
+local virtualUser = game:GetService("VirtualUser")
+local workspace = game:GetService("Workspace")
+
+-- Controles
+local speedEnabled = false
+local speedValue = 50
+local infiniteJumpEnabled = false
+local antiRagdollEnabled = false
+local desyncEnabled = false
+local espEnabled = false
+local espLinhaEnabled = false
+local spectatingEnabled = false
+local currentSpectating = nil
+local espColor = Color3.new(1, 0, 0)
+
+-- ==================== FUNÇÃO PARA TORNAR TUDO ROXO ====================
+local function tornarTudoRoxo()
+    local roxoEscuro = Color3.new(0.3, 0, 0.5)
+    local roxoClaro = Color3.new(0.8, 0.4, 1)
+    local roxoVibrante = Color3.new(0.6, 0, 1)
+    
+    task.wait(0.5)
+    
+    for _, gui in ipairs(player.PlayerGui:GetChildren()) do
+        if gui:IsA("ScreenGui") and gui.Name:find("Kavo") then
+            local function mudarCores(obj)
+                if obj:IsA("Frame") then
+                    if obj.BackgroundColor3 == Color3.new(0, 0, 0) or obj.BackgroundColor3 == Color3.new(0.1, 0.1, 0.1) then
+                        obj.BackgroundColor3 = roxoEscuro
+                    end
+                end
+                
+                if obj:IsA("TextLabel") or obj:IsA("TextButton") then
+                    if obj.TextColor3 == Color3.new(1, 1, 1) then
+                        obj.TextColor3 = roxoClaro
+                    end
+                end
+                
+                if obj:IsA("UIStroke") then
+                    obj.Color = roxoVibrante
+                end
+                
+                if obj:IsA("ScrollingFrame") then
+                    obj.ScrollBarImageColor3 = roxoVibrante
+                end
+                
+                for _, child in ipairs(obj:GetChildren()) do
+                    mudarCores(child)
+                end
+            end
+            mudarCores(gui)
+            break
+        end
+    end
+end
+
+spawn(tornarTudoRoxo)
+
+-- ==================== ESP ====================
+local espObjects = {}
+
+local function criarESP(jogador)
+    if jogador == player then return end
+    
+    local function onCharacter(character)
+        local head = character:WaitForChild("Head", 5)
+        local humanoid = character:WaitForChild("Humanoid", 5)
+        
+        if not head or not humanoid then return end
+        
+        local billboard = Instance.new("BillboardGui")
+        billboard.Name = "ESP_" .. jogador.Name
+        billboard.Adornee = head
+        billboard.Size = UDim2.new(0, 150, 0, 50)
+        billboard.StudsOffset = Vector3.new(0, 3, 0)
+        billboard.AlwaysOnTop = true
+        billboard.Parent = character
+        
+        local nomeLabel = Instance.new("TextLabel")
+        nomeLabel.Parent = billboard
+        nomeLabel.BackgroundTransparency = 1
+        nomeLabel.Size = UDim2.new(1, 0, 0.5, 0)
+        nomeLabel.Text = jogador.Name
+        nomeLabel.TextColor3 = espColor
+        nomeLabel.TextScaled = true
+        nomeLabel.Font = Enum.Font.GothamBold
+        
+        local vidaLabel = Instance.new("TextLabel")
+        vidaLabel.Parent = billboard
+        vidaLabel.BackgroundTransparency = 1
+        vidaLabel.Size = UDim2.new(1, 0, 0.5, 0)
+        vidaLabel.Position = UDim2.new(0, 0, 0.5, 0)
+        vidaLabel.Text = "❤️ " .. math.floor(humanoid.Health)
+        vidaLabel.TextColor3 = Color3.new(0, 1, 0)
+        vidaLabel.TextScaled = true
+        vidaLabel.Font = Enum.Font.GothamBold
+        
+        local highlight = Instance.new("Highlight")
+        highlight.Name = "HL_" .. jogador.Name
+        highlight.Adornee = character
+        highlight.FillColor = espColor
+        highlight.FillTransparency = 0.5
+        highlight.OutlineColor = Color3.new(1, 1, 1)
+        highlight.Parent = character
+        
+        table.insert(espObjects, {
+            billboard = billboard,
+            highlight = highlight,
+            jogador = jogador
+        })
+    end
+    
+    if jogador.Character then
+        onCharacter(jogador.Character)
+    end
+    
+    jogador.CharacterAdded:Connect(onCharacter)
+end
+
+-- ==================== ESP LINHA ====================
+local linhasESP = {}
+
+local function criarLinhaESP(jogador)
+    if jogador == player then return end
+    
+    local linha = Drawing.new("Line")
+    linha.Visible = false
+    linha.Color = espColor
+    linha.Thickness = 1
+    linha.Transparency = 0.5
+    
+    table.insert(linhasESP, {
+        linha = linha,
+        jogador = jogador
+    })
+end
+
+local function atualizarLinhasESP()
+    if not espLinhaEnabled then
+        for _, l in ipairs(linhasESP) do
+            if l.linha then
+                l.linha.Visible = false
+            end
+        end
+        return
+    end
+    
+    local telaCentro = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y)
+    
+    for _, l in ipairs(linhasESP) do
+        local jogador = l.jogador
+        local linha = l.linha
+        
+        if jogador and jogador.Character and jogador.Character:FindFirstChild("HumanoidRootPart") and jogador.Character:FindFirstChildOfClass("Humanoid") and jogador.Character.Humanoid.Health > 0 then
+            local root = jogador.Character.HumanoidRootPart
+            local posJogador, naTela = camera:WorldToViewportPoint(root.Position)
+            
+            if naTela then
+                linha.Visible = true
+                linha.From = Vector2.new(telaCentro.X, telaCentro.Y)
+                linha.To = Vector2.new(posJogador.X, posJogador.Y)
+                linha.Color = espColor
+            else
+                linha.Visible = false
+            end
+        else
+            linha.Visible = false
+        end
+    end
+end
+
+runService.Heartbeat:Connect(atualizarLinhasESP)
+
+-- ==================== FUNÇÕES ====================
+local function getPlayerList()
+    local list = {}
+    for _, v in ipairs(players:GetPlayers()) do
+        if v ~= player then
+            table.insert(list, v.Name)
+        end
+    end
+    return list
+end
+
+local function getPlayer(name)
+    for _, v in ipairs(players:GetPlayers()) do
+        if v.Name == name then
+            return v
+        end
+    end
+    return nil
+end
+
+-- ==================== ABAS ====================
+local mainTab = Window:NewTab("⚡ PRINCIPAL")
+local mainSection = mainTab:NewSection("Controles")
+
+mainSection:NewLabel("━━━━━━━━━━━━━━━━━━━━━━")
+mainSection:NewLabel("💜 ZEZIN HUB 💜")
+mainSection:NewLabel("━━━━━━━━━━━━━━━━━━━━━━")
+
+-- SPEED
+mainSection:NewToggle("Speed", "Aumentar velocidade", function(state)
+    speedEnabled = state
+    if player.Character then
+        local hum = player.Character:FindFirstChildOfClass("Humanoid")
+        if hum then
+            hum.WalkSpeed = state and speedValue or 16
+        end
+    end
+end)
+
+mainSection:NewSlider("Velocidade", "Regule a velocidade", 200, 50, function(value)
+    speedValue = value
+    if speedEnabled and player.Character then
+        local hum = player.Character:FindFirstChildOfClass("Humanoid")
+        if hum then
+            hum.WalkSpeed = value
+        end
+    end
+end)
+
+-- INFINITY JUMP
+mainSection:NewToggle("Pulo Infinito", "Pular no ar", function(state)
+    infiniteJumpEnabled = state
+end)
+
+-- ANTI RAGDOLL
+mainSection:NewToggle("Anti Ragdoll", "Nunca cair", function(state)
+    antiRagdollEnabled = state
+end)
+
+-- DESYNC (NOCLIP)
+mainSection:NewToggle("Desync (Noclip)", "Atravessar paredes", function(state)
+    desyncEnabled = state
+end)
+
+-- ==================== ESP TAB ====================
+local espTab = Window:NewTab("👁️ ESP")
+local espMainSection = espTab:NewSection("Configurações ESP")
+local espColorSection = espTab:NewSection("Cor do ESP")
+
+-- ESP NOME
+espMainSection:NewToggle("Ativar ESP (Nome/Vida)", "Ver caixas com nome e vida", function(state)
+    espEnabled = state
+    if state then
+        for _, v in ipairs(players:GetPlayers()) do
+            criarESP(v)
+        end
+        players.PlayerAdded:Connect(function(v)
+            if espEnabled then
+                criarESP(v)
+            end
+        end)
+        Library:Notify("💜 ESP NOME ATIVADO")
+    else
+        for _, obj in ipairs(espObjects) do
+            pcall(function() obj.billboard:Destroy() end)
+            pcall(function() obj.highlight:Destroy() end)
+        end
+        espObjects = {}
+        Library:Notify("❌ ESP NOME DESATIVADO")
+    end
+end)
+
+-- ESP LINHA
+espMainSection:NewToggle("Ativar ESP LINHA", "Desenha linhas da tela até os jogadores", function(state)
+    espLinhaEnabled = state
+    
+    if state then
+        for _, v in ipairs(linhasESP) do
+            if v.linha then
+                v.linha:Remove()
+            end
+        end
+        linhasESP = {}
+        
+        for _, v in ipairs(players:GetPlayers()) do
+            criarLinhaESP(v)
+        end
+        
+        players.PlayerAdded:Connect(function(v)
+            if espLinhaEnabled then
+                criarLinhaESP(v)
+            end
+        end)
+        
+        players.PlayerRemoving:Connect(function(v)
+            for i, l in ipairs(linhasESP) do
+                if l.jogador == v then
+                    if l.linha then
+                        l.linha:Remove()
+                    end
+                    table.remove(linhasESP, i)
+                    break
+                end
+            end
+        end)
+        
+        Library:Notify("💜 ESP LINHA ATIVADO")
+    else
+        for _, l in ipairs(linhasESP) do
+            if l.linha then
+                l.linha.Visible = false
+                l.linha:Remove()
+            end
+        end
+        linhasESP = {}
+        Library:Notify("❌ ESP LINHA DESATIVADO")
+    end
+end)
+
+-- COR DO ESP
+espColorSection:NewColorPicker("Cor do ESP", "Escolha a cor", Color3.new(1, 0, 0), function(color)
+    espColor = color
+    
+    for _, obj in ipairs(espObjects) do
+        if obj.billboard then
+            local nome = obj.billboard:FindFirstChildOfClass("TextLabel")
+            if nome then
+                nome.TextColor3 = color
+            end
+        end
+        if obj.highlight then
+            obj.highlight.FillColor = color
+        end
+    end
+    
+    for _, l in ipairs(linhasESP) do
+        if l.linha then
+            l.linha.Color = color
+        end
+    end
+end)
+
+-- ==================== TELEPORTE TAB ====================
+local tpTab = Window:NewTab("📌 TELEPORTE")
+local tpSection = tpTab:NewSection("Teleportar para Jogadores")
+
+tpSection:NewDropdown("Jogadores", "Escolha um jogador", getPlayerList(), function(selected)
+    local target = getPlayer(selected)
+    if target and target.Character and player.Character then
+        local tRoot = target.Character:FindFirstChild("HumanoidRootPart")
+        local pRoot = player.Character:FindFirstChild("HumanoidRootPart")
+        if tRoot and pRoot then
+            pRoot.CFrame = tRoot.CFrame * CFrame.new(0, 5, 0)
+        end
+    end
+end)
+
+tpSection:NewButton("Atualizar Lista", "Recarregar", function()
+    tpSection:UpdateDropdown("Jogadores", getPlayerList())
+end)
+
+-- ==================== SPECTATOR TAB ====================
+local spectateTab = Window:NewTab("👁️ SPECTATOR")
+local spectateSection = spectateTab:NewSection("Modo Espectador")
+
+local function startSpectating(target)
+    if target and target.Character then
+        spectatingEnabled = true
+        currentSpectating = target
+        camera.CameraSubject = target.Character.Humanoid
+    end
+end
+
+local function stopSpectating()
+    spectatingEnabled = false
+    currentSpectating = nil
+    camera.CameraSubject = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+end
+
+spectateSection:NewDropdown("Jogadores", "Quem espiar", getPlayerList(), function(selected)
+    startSpectating(getPlayer(selected))
+end)
+
+spectateSection:NewButton("Parar de Espiar", "Voltar", function()
+    stopSpectating()
+end)
+
+spectateSection:NewButton("Atualizar Lista", "Recarregar", function()
+    spectateSection:UpdateDropdown("Jogadores", getPlayerList())
+end)
+
+-- ==================== SISTEMAS ====================
+
+-- ANTI RAGDOLL CORRIGIDO
+local function checkAntiRagdoll()
+    if not antiRagdollEnabled or not player.Character then return end
+    
+    local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return end
+    
+    local ragdollStates = {
+        [Enum.HumanoidStateType.FallingDown] = true,
+        [Enum.HumanoidStateType.Ragdoll] = true,
+        [Enum.HumanoidStateType.Physics] = true,
+        [Enum.HumanoidStateType.Dead] = true,
+        [Enum.HumanoidStateType.Freefall] = true
+    }
+    
+    if ragdollStates[humanoid:GetState()] then
+        humanoid:ChangeState(Enum.HumanoidStateType.Running)
+        
+        if player.Character:FindFirstChild("RagdollConstraint") then
+            player.Character.RagdollConstraint:Destroy()
+        end
+        
+        local rootPart = player.Character:FindFirstChild("HumanoidRootPart")
+        if rootPart then
+            rootPart.Velocity = Vector3.new(0, 10, 0)
+        end
+    end
+end
+
+runService.Heartbeat:Connect(function()
+    if antiRagdollEnabled then
+        checkAntiRagdoll()
+    end
+end)
+
+-- DESYNC (NOCLIP)
+runService.Stepped:Connect(function()
+    if desyncEnabled and player.Character then
+        for _, v in ipairs(player.Character:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.CanCollide = false
+            end
+        end
+    end
+end)
+
+-- INFINITY JUMP
+userInputService.JumpRequest:Connect(function()
+    if infiniteJumpEnabled and player.Character then
+        local hum = player.Character:FindFirstChildOfClass("Humanoid")
+        local root = player.Character:FindFirstChild("HumanoidRootPart")
+        if hum and root and hum.FloorMaterial == Enum.Material.Air then
+            root.Velocity = Vector3.new(root.Velocity.X, 50, root.Velocity.Z)
+        end
+    end
+end)
+
+-- ==================== BOTÃO DE MINIMIZAR ====================
+task.wait(1)
+
+local kavoFrame = nil
+for _, gui in ipairs(player.PlayerGui:GetChildren()) do
+    if gui:IsA("ScreenGui") and gui.Name:find("Kavo") then
+        for _, frame in ipairs(gui:GetChildren()) do
+            if frame:IsA("Frame") and frame.Name == "Main" then
+                kavoFrame = frame
+                break
+            end
+        end
+        break
+    end
+end
+
+if kavoFrame then
+    local posOriginal = kavoFrame.Position
+    local sizeOriginal = kavoFrame.Size
+    local minimizado = false
+    
+    local minimizeBtn = Instance.new("TextButton")
+    minimizeBtn.Parent = kavoFrame
+    minimizeBtn.Size = UDim2.new(0, 30, 0, 30)
+    minimizeBtn.Position = UDim2.new(1, -35, 0, 5)
+    minimizeBtn.Text = "−"
+    minimizeBtn.TextColor3 = Color3.new(1, 1, 1)
+    minimizeBtn.TextScaled = true
+    minimizeBtn.Font = Enum.Font.GothamBold
+    minimizeBtn.BackgroundColor3 = Color3.new(0.3, 0, 0.5)
+    minimizeBtn.BackgroundTransparency = 0.3
+    minimizeBtn.BorderSizePixel = 0
+    minimizeBtn.ZIndex = 1000
+    
+    local btnStroke = Instance.new("UIStroke")
+    btnStroke.Parent = minimizeBtn
+    btnStroke.Color = Color3.new(0.6, 0, 1)
+    btnStroke.Thickness = 1
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.Parent = minimizeBtn
+    btnCorner.CornerRadius = UDim.new(0, 6)
+    
+    minimizeBtn.MouseButton1Click:Connect(function()
+        minimizado = not minimizado
+        
+        if minimizado then
+            minimizeBtn.Text = "□"
+            
+            for _, child in ipairs(kavoFrame:GetChildren()) do
+                if child:IsA("Frame") or child:IsA("ScrollingFrame") then
+                    if child ~= minimizeBtn then
+                        child.Visible = false
+                    end
+                end
+            end
+            
+            local tween = tweenService:Create(kavoFrame, 
+                TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), 
+                {Position = UDim2.new(1, -45, 0, 5), Size = UDim2.new(0, 40, 0, 40)}
+            )
+            tween:Play()
+        else
+            minimizeBtn.Text = "−"
+            
+            for _, child in ipairs(kavoFrame:GetChildren()) do
+                if child:IsA("Frame") or child:IsA("ScrollingFrame") then
+                    child.Visible = true
+                end
+            end
+            
+            local tween = tweenService:Create(kavoFrame, 
+                TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), 
+                {Position = posOriginal, Size = sizeOriginal}
+            )
+            tween:Play()
+        end
+    end)
+end
+
+-- ==================== NOTIFICAÇÃO FINAL ====================
+Library:Notify("💜 ZEZIN HUB CARREGADO!")
+Library:Notify("✅ SPEED | INFINITY JUMP | ANTI RAGDOLL")
+Library:Notify("✅ DESYNC | ESP | ESP LINHA | TP | SPECTATOR")
